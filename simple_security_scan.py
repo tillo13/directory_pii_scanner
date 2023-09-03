@@ -33,8 +33,9 @@ def add_to_file_walkthrough(is_file_clean, file_path, file_walkthrough):
     
 
 # Define constants
-TREE_TO_SCAN = "/Users/at/Desktop/code/microsoft_bot_framework"
-OUT_FILENAME = 'security_scan_results.txt'
+TREE_TO_SCAN = "/Users/at/Desktop/code/"
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+OUT_FILENAME = os.path.join(BASE_DIR, 'security_scan_results.txt')
 SCRIPT_NAME = os.path.basename(__file__)
 SKIP_DIRS = ['node_modules', '.git']
 SKIP_FILES = ['.env', OUT_FILENAME, SCRIPT_NAME]
@@ -88,8 +89,12 @@ for root, dirs, files in os.walk(TREE_TO_SCAN):
     dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
     for file in files:
         total_scanned_files += 1
+        file_path = os.path.join(root, file)
+        
         # Skip defined files
-        if file in SKIP_FILES:
+        if file in SKIP_FILES or file_path in SKIP_FILES:
+            total_skipped_files += 1
+            file_walkthrough.append(f"[SKIPPED defined file] {file_path}")
             continue
         try:
             file_path = os.path.join(root, file)
@@ -185,4 +190,4 @@ print(f"Your name mentions: {len(COUNTER_YOUR_NAME_FILES)}")
 print(f"Your email mentions: {len(COUNTER_YOUR_EMAIL_FILES)}\n")
 print(f"Total scan score: {score}/{STARTING_SCORE}\n")
 print(f"Total scan time: {execution_time:.5f} seconds\n")
-print(f"Scan results exported to: {os.path.join(TREE_TO_SCAN, OUT_FILENAME)}")
+print(f"Scan results exported to: {OUT_FILENAME}\n")
