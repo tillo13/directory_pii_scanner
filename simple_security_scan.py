@@ -12,7 +12,7 @@ import os
 import re
 import time
 from datetime import datetime
-
+from tqdm import tqdm
 
 def add_to_file_walkthrough(is_file_clean, file_path, file_walkthrough):
     """
@@ -83,57 +83,65 @@ total_scanned_files, total_skipped_files = 0, 0
 file_walkthrough = []
 start_time = time.time()
 
-# Scan through the directory TREE_TO_SCAN
-for root, dirs, files in os.walk(TREE_TO_SCAN):
-    # Don't visit specified directories
-    dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-    for file in files:
-        total_scanned_files += 1
-        file_path = os.path.join(root, file)
-        
-        # Skip defined files
-        if file in SKIP_FILES or file_path in SKIP_FILES:
-            total_skipped_files += 1
-            file_walkthrough.append(f"[SKIPPED defined file] {file_path}")
-            continue
-        try:
-            file_path = os.path.join(root, file)
-            with open(file_path, 'r') as file_contents:
-                data = file_contents.read().lower()
-                is_file_clean = True  # Assume the file is clean initially.
+# Create a generator that will yield all the valid files
+def files_to_scan():
+    for root, dirs, files in os.walk(TREE_TO_SCAN):
+        # Don't visit specified directories
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        for file in files:
+            if file not in SKIP_FILES and not os.path.join(root, file) in SKIP_FILES:
+                yield os.path.join(root, file)
 
-                # Check for URLs with company name and potential api keys
-                urls = re.findall(REGEX_URL, data, re.IGNORECASE)
-                keys = re.findall(REGEX_POTENTIAL_KEY, data, re.IGNORECASE)
+# Create a pre-calculated list of files to get the total count for tqdm
+list_of_files = list(files_to_scan())
+total_files = len(list_of_files)
 
-                # Add to company URL counter for each URL containing company name
-                COUNTER_COMPANY_URL += sum([1 for url in urls if COMPANY_NAME in url])
+# Now start processing the files
+for file_tobe_scanned in tqdm(list_of_files, total=total_files, desc="Scanning Files", bar_format="{l_bar}{bar} {n_fmt}/{total_fmt} Files | Elapsed Time: {elapsed} | Files per Second: {rate_fmt}{postfix}", leave=False):
+    total_scanned_files += 1
+    
+    # Skip defined files
+    if file_tobe_scanned in SKIP_FILES:
+        total_skipped_files += 1
+        file_walkthrough.append(f"[SKIPPED defined file] {file_tobe_scanned}")
+        continue
+    try:
+        with open(file_tobe_scanned, 'r') as file_contents:
+            data = file_contents.read().lower()
+            is_file_clean = True  # Assume the file is clean initially.
 
-                # Add to potential keys counter for each potential API key
-                if keys:
-                    for key in keys:
-                        key_value = key[1].split("=")[-1].strip() if '=' in key[1] else key[1].split(":")[-1].strip()
-                        if re.search(r'\d', key_value): # check if there is at least one digit in the key value
-                            COUNTER_POTENTIAL_KEYS.append((os.path.join(root, file), key[0]))
-                            is_file_clean = False 
+            # Check for URLs with company name and potential api keys
+            urls = re.findall(REGEX_URL, data, re.IGNORECASE)
+            keys = re.findall(REGEX_POTENTIAL_KEY, data, re.IGNORECASE)
 
-                # Add to corresponding lists if company name, your name, or email is mentioned
-                for regex, counter in zip(
-                    [REGEX_COMPANY_NAME, REGEX_YOUR_NAME, REGEX_YOUR_EMAIL],
-                    [COUNTER_COMPANY_NAME_FILES, COUNTER_YOUR_NAME_FILES, COUNTER_YOUR_EMAIL_FILES]
-                ):
-                    if regex.search(data):
-                        counter.append(os.path.join(root, file))
-                        is_file_clean = False
+            # Add to company URL counter for each URL containing company name
+            COUNTER_COMPANY_URL += sum([1 for url in urls if COMPANY_NAME in url])
 
-                # Add to file walkthrough
-                file_walkthrough = add_to_file_walkthrough(is_file_clean, file_path, file_walkthrough)
+            # Add to potential keys counter for each potential API key
+            if keys:
+                for key in keys:
+                    key_value = key[1].split("=")[-1].strip() if '=' in key[1] else key[1].split(":")[-1].strip()
+                    if re.search(r'\d', key_value): # check if there is at least one digit in the key value
+                        COUNTER_POTENTIAL_KEYS.append((file_tobe_scanned, key[0]))
+                        is_file_clean = False 
 
-        except UnicodeDecodeError:
-            total_skipped_files += 1
-            file_walkthrough.append(f"[SKIPPED non-text file] {file_path}")
-            with open(OUT_FILENAME, 'a') as skipped_file:
-                skipped_file.write(f"Skipped non-text file: {os.path.join(root, file)}\n")
+            # Add to corresponding lists if company name, your name, or email is mentioned
+            for regex, counter in zip(
+                [REGEX_COMPANY_NAME, REGEX_YOUR_NAME, REGEX_YOUR_EMAIL],
+                [COUNTER_COMPANY_NAME_FILES, COUNTER_YOUR_NAME_FILES, COUNTER_YOUR_EMAIL_FILES]
+            ):
+                if regex.search(data):
+                    counter.append(file_tobe_scanned)
+                    is_file_clean = False
+
+            # Add to file walkthrough
+            file_walkthrough = add_to_file_walkthrough(is_file_clean, file_tobe_scanned, file_walkthrough)
+
+    except UnicodeDecodeError:
+        total_skipped_files += 1
+        file_walkthrough.append(f"[SKIPPED non-text file] {file_tobe_scanned}")
+        with open(OUT_FILENAME, 'a') as skipped_file:
+            skipped_file.write(f"Skipped non-text file: {file_tobe_scanned}\n")
 
 # Calculate the resulting score
 consequence_score = (
