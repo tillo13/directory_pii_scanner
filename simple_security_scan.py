@@ -36,9 +36,9 @@ def add_to_file_walkthrough(is_file_clean, file_path, file_walkthrough):
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 datetime_str = datetime.now().strftime('%Y_%m_%d_%H%M%S%f')[:19]
-OUT_FILENAME = os.path.join(BASE_DIR, f'{datetime_str}_security_scan_results.txt')
+OUT_FILENAME = os.path.join(BASE_DIR, f'{datetime_str}_pii_scan_results.txt')
 
-TREE_TO_SCAN = "/Users/at/Desktop/code/"
+TREE_TO_SCAN = "/Users/at/Desktop/code/boomi_golang"
 SCRIPT_NAME = os.path.basename(__file__)
 SKIP_DIRS = ['node_modules', '.git']
 SKIP_FILES = ['.env', OUT_FILENAME, SCRIPT_NAME]
@@ -156,9 +156,9 @@ score = STARTING_SCORE - consequence_score
 # calculate the execution time
 execution_time = time.time() - start_time
 
-# Export the scan results to a TXT file
 with open(OUT_FILENAME, 'w') as result_file:
-    result_file.write("Security Scan Results\n")
+    result_file.write(f'Scan started on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} UTC\n')  # write the scan start time at the top
+    result_file.write("\nPII Scan Results\n")
     result_file.write("---------------------\n")
 
     # Display the counter results for each scanned item
@@ -182,9 +182,11 @@ with open(OUT_FILENAME, 'w') as result_file:
     for status in file_walkthrough:
         result_file.write(f"{status}\n")
    
-    # Display the end time
-    utc_now = datetime.utcnow()
-    result_file.write(f'\nScan completed on: {utc_now.strftime("%Y-%m-%d %H:%M:%S")} UTC\n')
+    # Write completed timestamp in the same format
+    result_file.write(f'\nScan completed on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} UTC\n')
+
+    # Write total scanning execution time
+    result_file.write(f'Total scan time: {execution_time:.5f} seconds\n')
 
 # Output results to console
 print(f"Scanned directory: {TREE_TO_SCAN}\n")
