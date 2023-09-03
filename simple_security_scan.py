@@ -33,9 +33,12 @@ def add_to_file_walkthrough(is_file_clean, file_path, file_walkthrough):
     
 
 # Define constants
-TREE_TO_SCAN = "/Users/at/Desktop/code/"
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-OUT_FILENAME = os.path.join(BASE_DIR, 'security_scan_results.txt')
+
+datetime_str = datetime.now().strftime('%Y_%m_%d_%H%M%S%f')[:19]
+OUT_FILENAME = os.path.join(BASE_DIR, f'{datetime_str}_security_scan_results.txt')
+
+TREE_TO_SCAN = "/Users/at/Desktop/code/"
 SCRIPT_NAME = os.path.basename(__file__)
 SKIP_DIRS = ['node_modules', '.git']
 SKIP_FILES = ['.env', OUT_FILENAME, SCRIPT_NAME]
@@ -73,10 +76,7 @@ COUNTER_COMPANY_NAME_FILES = []
 COUNTER_YOUR_NAME_FILES = []
 COUNTER_YOUR_EMAIL_FILES = []
 
-if os.path.exists(OUT_FILENAME):
-    print("[Notice] The existing security report file will be overwritten.")
-else:
-    print("[Notice] A new security report file will be created.")
+print(f"Creating file: {OUT_FILENAME}")
 
 # Initialize variables
 total_scanned_files, total_skipped_files = 0, 0
