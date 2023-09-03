@@ -1,0 +1,26 @@
+Scan started on: 2023-09-03 09:37:17 UTC
+
+PII Scan Results
+---------------------
+
+URLs in codebase containing company123: 0
+Potential API keys: 0
+Company name mentions: 0
+Your name mentions: 1
+Found in:
+- /Users/at/Desktop/code/test_golang/LICENSE
+
+Your email mentions: 0
+
+Total Security Score: 99.9999/100.0
+
+File Walkthrough:
+[SKIPPED non-text file] /Users/at/Desktop/code/test_golang/.DS_Store
+[INVESTIGATE...] /Users/at/Desktop/code/test_golang/LICENSE
+[CLEAN!] /Users/at/Desktop/code/test_golang/README.md
+[CLEAN!] /Users/at/Desktop/code/test_golang/git_push.sh
+[CLEAN!] /Users/at/Desktop/code/test_golang/.gitignore
+[CLEAN!] /Users/at/Desktop/code/test_golang/main.go
+
+Scan completed on: 2023-09-03 09:37:17 UTC
+Total scan time: 0.02565 seconds
